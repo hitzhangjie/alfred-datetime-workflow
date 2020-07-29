@@ -13,10 +13,28 @@ import (
 var (
 	workflow *aw.Workflow
 
-	//icon = &aw.Icon{
-	//	Value: "com.apple.safari.bookmark",
-	//	Type:  aw.IconTypeFileType,
-	//}
+	icon = &aw.Icon{
+		Value: aw.IconClock.Value,
+		Type:  aw.IconClock.Type,
+	}
+
+	layouts = []string{
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		//time.RFC822,
+		//time.RFC822Z,
+		//time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+		//time.Kitchen,
+		//time.Stamp,
+		//time.StampMilli,
+		//time.StampMicro,
+		//time.StampNano,
+	}
 )
 
 const (
@@ -38,7 +56,7 @@ func run() {
 	workflow.NewItem("this is a result").Valid(true).
 		Arg(args[0]).
 		Title("this is title").
-		Subtitle("this is subtitle")
+		Subtitle("this is subtitle").Icon(icon)
 	workflow.SendFeedback()
 
 	buf := &bytes.Buffer{}
