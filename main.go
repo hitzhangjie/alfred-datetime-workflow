@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 
 	aw "github.com/deanishe/awgo"
@@ -50,13 +51,24 @@ func run() {
 
 	// 获取参数
 	args := workflow.Args()
+	if len(args) > 1 {
+		v := strings.Join(args, " ")
+		fmt.Printf("%s", v)
+		return
+	}
+
 	// don't log to stdout
 	//fmt.Println(args)
 
-	workflow.NewItem("this is a result").Valid(true).
-		Arg(args[0]).
-		Title("this is title").
-		Subtitle("this is subtitle").Icon(icon)
+	ts := time.Now()
+	for _, layout := range layouts {
+		v := ts.Format(layout)
+		workflow.NewItem(v).
+			Subtitle(layout).
+			Icon(icon).
+			Arg(v).
+			Valid(true)
+	}
 	workflow.SendFeedback()
 
 	buf := &bytes.Buffer{}
