@@ -1,0 +1,6 @@
+alfred workflow和alfred本身的交互是通过管道方式进行连接的：
+- alfred将用户输入的信息转发给匹配的workflow；
+- workflow对接收到的参数进行处理，并将处理的结果按照指定格式输出到stdout；
+- alfred读取stdout中的数据作为响应展示到用户界面；
+
+写过protoc插件的很容易理解这里的交互过程了，需要注意的是，调试用的log信息不要输出到stddout，写日志文件或者使用alfred自带的日志都可以。
