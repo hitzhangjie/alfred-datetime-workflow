@@ -6,6 +6,6 @@ import (
 )
 
 func rerun() {
-	log("rerun", workflow.Args())
+	log("rerun, args: %v", workflow.Args())
 	fmt.Printf(strings.Join(workflow.Args(), " "))
 }

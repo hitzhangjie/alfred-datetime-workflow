@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -28,11 +29,18 @@ var (
 		time.RFC3339Nano,
 		time.UnixDate,
 		time.RubyDate,
-		time.RFC1123,
+		//time.RFC1123,
 		time.RFC1123Z,
 	}
 
-	regexpTimestamp = regexp.MustCompile(`[1-9]{1}[0-9]*`)
+	moreLayouts = []string{
+		"2006-01-02",
+		"2006-01-02 15:04",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999",
+	}
+
+	regexpTimestamp = regexp.MustCompile(`^[1-9]{1}\d+$`)
 
 	phaseName = "phaseName"
 	phase1st  = "first"
@@ -41,41 +49,50 @@ var (
 
 func run() {
 
-	workflow.Var(phaseName, phase2nd)
+	var err error
 
 	args := workflow.Args()
-	log("run", args)
+	log("run, args: %v", args)
 
 	if len(args) == 0 {
 		return
 	}
 
-	input := strings.Join(args, " ")
+	defer func() {
+		if err != nil {
+			return
+		}
+		workflow.Var(phaseName, phase2nd)
+		workflow.SendFeedback()
+		return
+	}()
 
 	// 处理 now
+	input := strings.Join(args, " ")
 	if input == "now" {
 		processNow()
-		workflow.SendFeedback()
 		return
 	}
 
 	// 处理时间戳
 	if regexpTimestamp.MatchString(input) {
-		v, err := strconv.ParseInt(args[0], 10, 32)
-		if err == nil {
+		v, e := strconv.ParseInt(args[0], 10, 32)
+		if e == nil {
 			processTimestamp(time.Unix(v, 0))
-			workflow.SendFeedback()
 			return
 		}
+		err = e
+		return
 	}
 
-	processTimeStr(input)
-	workflow.SendFeedback()
-	return
-
+	// 处理时间字符串
+	err = processTimeStr(input)
+	if err != nil {
+		log("process time str error: %v", err)
+	}
 }
 
-func log(phase string, args []string) {
+func log(format string, args ...interface{}) {
 	buf := &bytes.Buffer{}
 
 	fp := filepath.Join("/Users/zhangjie/Github/alfred-datetime-workflow/test.log")
@@ -83,8 +100,8 @@ func log(phase string, args []string) {
 	if err == nil && len(dat) != 0 {
 		buf = bytes.NewBuffer(dat)
 	}
-
-	buf.WriteString(fmt.Sprintf("time: %v, phase:%s, args: %s\n", time.Now(), phase, strings.Join(args, " ")))
+	format = fmt.Sprintf("time: %v, %s\n", time.Now(), format)
+	buf.WriteString(fmt.Sprintf(format, args))
 	ioutil.WriteFile(fp, buf.Bytes(), 0666)
 }
 
@@ -116,17 +133,18 @@ func processTimestamp(timestamp time.Time) {
 	}
 }
 
-func processTimeStr(timestr string) {
+func processTimeStr(timestr string) error {
 
 	timestamp := time.Time{}
 	layoutMatch := ""
 
-	for _, layout := range layouts {
-		t, err := time.Parse(layout, timestr)
-		if err == nil {
-			timestamp = t
-			layoutMatch = layout
-			break
+	layoutMatch, timestamp, ok := matchedLayout(layouts, timestr)
+	if !ok {
+		log("layouts not mached, timestr: %s", timestr)
+		layoutMatch, timestamp, ok = matchedLayout(moreLayouts, timestr)
+		if !ok {
+			log("morelayouts not mached, timestr: %s", timestr)
+			return errors.New("no matched time layout found")
 		}
 	}
 
@@ -138,6 +156,7 @@ func processTimeStr(timestr string) {
 		Arg(secs).
 		Valid(true)
 
+	// other time layouts
 	for _, layout := range layouts {
 		if layout == layoutMatch {
 			continue
@@ -148,6 +167,21 @@ func processTimeStr(timestr string) {
 			Icon(icon).
 			Arg(v).
 			Valid(true)
+	}
+
+	return nil
+}
+
+func matchedLayout(layouts []string, timestr string) (matched string, timestamp time.Time, ok bool) {
+
+	log("layouts length: %d", len(layouts))
+
+	for _, layout := range layouts {
+		log("parse time: %s in layout: %s", timestr, layout)
+		v, err := time.Parse(layout, timestr)
+		if err == nil {
+			return layout, v, true
+		}
 	}
 	return
 }
