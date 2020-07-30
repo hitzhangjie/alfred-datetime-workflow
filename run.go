@@ -94,6 +94,13 @@ func run() {
 }
 
 func log(format string, args ...interface{}) {
+
+	v := os.Getenv("LOGGING_ENABLED")
+	enabled, err := strconv.ParseBool(v)
+	if err != nil || !enabled {
+		return
+	}
+
 	buf := &bytes.Buffer{}
 
 	exe, _ := os.Executable()
