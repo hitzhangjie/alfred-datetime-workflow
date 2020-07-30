@@ -41,7 +41,7 @@ var (
 		"2006-01-02 15:04:05.999",
 	}
 
-	regexpTimestamp = regexp.MustCompile(`l^[1-9]{1}\d+$`)
+	regexpTimestamp = regexp.MustCompile(`^[1-9]{1}\d+$`)
 
 	phaseName = "phaseName"
 	phase1st  = "first"
