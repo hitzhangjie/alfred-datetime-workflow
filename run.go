@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -95,7 +96,10 @@ func run() {
 func log(format string, args ...interface{}) {
 	buf := &bytes.Buffer{}
 
-	fp := filepath.Join("/Users/zhangjie/Github/alfred-datetime-workflow/test.log")
+	exe, _ := os.Executable()
+	dir, _ := filepath.Split(exe)
+	fp := filepath.Join(dir, "awgo.log")
+
 	dat, err := ioutil.ReadFile(fp)
 	if err == nil && len(dat) != 0 {
 		buf = bytes.NewBuffer(dat)
