@@ -30,7 +30,6 @@ var (
 		time.RFC3339Nano,
 		time.UnixDate,
 		time.RubyDate,
-		//time.RFC1123,
 		time.RFC1123Z,
 	}
 
@@ -42,10 +41,6 @@ var (
 	}
 
 	regexpTimestamp = regexp.MustCompile(`^[1-9]{1}\d+$`)
-
-	phaseName = "phaseName"
-	phase1st  = "first"
-	phase2nd  = "second"
 )
 
 func run() {
@@ -60,12 +55,10 @@ func run() {
 	}
 
 	defer func() {
-		if err != nil {
+		if err == nil {
+			workflow.SendFeedback()
 			return
 		}
-		workflow.Var(phaseName, phase2nd)
-		workflow.SendFeedback()
-		return
 	}()
 
 	// 处理 now
@@ -91,29 +84,6 @@ func run() {
 	if err != nil {
 		log("process time str error: %v", err)
 	}
-}
-
-func log(format string, args ...interface{}) {
-
-	v := os.Getenv("LOGGING_ENABLED")
-	enabled, err := strconv.ParseBool(v)
-	if err != nil || !enabled {
-		return
-	}
-
-	buf := &bytes.Buffer{}
-
-	exe, _ := os.Executable()
-	dir, _ := filepath.Split(exe)
-	fp := filepath.Join(dir, "awgo.log")
-
-	dat, err := ioutil.ReadFile(fp)
-	if err == nil && len(dat) != 0 {
-		buf = bytes.NewBuffer(dat)
-	}
-	format = fmt.Sprintf("time: %v, %s\n", time.Now(), format)
-	buf.WriteString(fmt.Sprintf(format, args))
-	ioutil.WriteFile(fp, buf.Bytes(), 0666)
 }
 
 func processNow() {
@@ -195,4 +165,28 @@ func matchedLayout(layouts []string, timestr string) (matched string, timestamp 
 		}
 	}
 	return
+}
+
+// 设置环境变量LOGGING_ENABLED=1/true，来激活调试日志
+func log(format string, args ...interface{}) {
+
+	v := os.Getenv("LOGGING_ENABLED")
+	enabled, err := strconv.ParseBool(v)
+	if err != nil || !enabled {
+		return
+	}
+
+	buf := &bytes.Buffer{}
+
+	exe, _ := os.Executable()
+	dir, _ := filepath.Split(exe)
+	fp := filepath.Join(dir, "awgo.log")
+
+	dat, err := ioutil.ReadFile(fp)
+	if err == nil && len(dat) != 0 {
+		buf = bytes.NewBuffer(dat)
+	}
+	format = fmt.Sprintf("time: %v, %s\n", time.Now(), format)
+	buf.WriteString(fmt.Sprintf(format, args))
+	ioutil.WriteFile(fp, buf.Bytes(), 0666)
 }

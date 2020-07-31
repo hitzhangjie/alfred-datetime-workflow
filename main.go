@@ -10,13 +10,5 @@ const (
 
 func main() {
 	workflow = aw.New(aw.HelpURL(helpURL))
-
-	phase := workflow.Config.GetString(phaseName)
-
-	if phase != phase2nd {
-		workflow.Run(run)
-		return
-	}
-
-	workflow.Run(rerun)
+	workflow.Run(run)
 }
